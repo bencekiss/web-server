@@ -15,12 +15,37 @@ loop do                                             # Server runs forever
   end
   puts lines                                        # Output the full request to stdout
 
-  filename = "index.html"
-  response = File.read(filename)
+  # filename = "index.html"
+  # response = File.read(filename)
+  filename = lines[0].gsub(/GET \//, '').gsub(/\ HTTP.*/, '') # this line finds the actual url that comes after the localhost:2000/
+  if File.exists?(filename)
+    response_body = File.read(filename)
+    success_header = []
+    success_header << "HTTP/1.1 200 OK"
+    if filename == "master.css"
+      success_header << "Content-Type: text/css"
+    elsif filename == "mockup.png"
+      success_header << "Content-Type: image/png"
+    else
+      success_header << "Content-Type: text/html" # should reflect the appropriate content type (HTML, CSS, text, etc)
+    end
 
+    success_header << "Content-Length: #{response_body.length}" # should be the actual size of the response body
+    success_header << "Connection: close"
+    header = success_header.join("\r\n")
+  else
+    response_body = "File Not Found\n"
+    not_found_header = []
+    not_found_header << "HTTP/1.1 404 Not Found"
+    not_found_header << "Content-Type: text/plain" # is always text/plain
+    not_found_header << "Content-Length: #{response_body.length}" # should the actual size of the response body
+    not_found_header << "Connection: close"
+    header = not_found_header.join("\r\n")
+  end
 
-
-  client.puts(Time.now.ctime)
+  response = [header, response_body].join("\r\n\r\n")
+  puts response
+  # client.puts(Time.now.ctime)
   client.puts(response)                       # Output the current time to the client
   client.close                                      # Disconnect from the client
 end
